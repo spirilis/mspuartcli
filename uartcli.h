@@ -41,9 +41,11 @@ void uartcli_printhex_byte(char);
 void uartcli_printhex_word(int);
 
 // Accept incoming data
-extern volatile char uartcli_task; // Status variable
+extern volatile char uartcli_task;      // Status variable
 #define UARTCLI_TASK_AVAILABLE		0x01
 #define UARTCLI_TASK_RECEIVING		0x02
+#define UARTCLI_TASK_TX			0x04
+
 inline char uartcli_available();   // Check if an incoming message is available
 inline void uartcli_clear();       // Notify library last incoming message processed; quit dropping new commands
 void uartcli_setbuf(char *, int);  // Set incoming data buffer and maximum size.  Run within uartcli_begin()

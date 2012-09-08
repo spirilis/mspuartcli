@@ -44,6 +44,13 @@ void uart_end()
 	IE2 &= ~(UCA0TXIE | UCA0RXIE);
 }
 
+void uartcli_tx_lpm0()
+{
+	uartcli_task |= UARTCLI_TASK_TX;
+	while (uartcli_task & UARTCLI_TASK_TX)
+		LPM0;
+}
+
 void uartcli_print_str(char *str)
 {
 	int i=0, j;
@@ -51,7 +58,9 @@ void uartcli_print_str(char *str)
 	j = strlen(str);
 	for (; j; j--) {
 		UCA0TXBUF = str[i];
-		LPM0;
+		uartcli_task |= UARTCLI_TASK_TX;
+		while (uartcli_task & UARTCLI_TASK_TX)
+			LPM0;
 		i++;
 	}
 }
@@ -63,11 +72,11 @@ void uartcli_println_str(char *str)
 	j = strlen(str);
 	for (; j; j--) {
 		UCA0TXBUF = str[i];
-		LPM0;
+		uartcli_tx_lpm0();
 		i++;
 	}
 	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -76,91 +85,91 @@ void uartcli_print_int(int num)
 {
 	if (num < 0) {
 		UCA0TXBUF = '-';
-		LPM0;
+		uartcli_tx_lpm0();
 		num *= -1;
 	}
 	if (num >= 10000) {
 		UCA0TXBUF = hexdigits[num / 10000];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
 	}
 	if (num >= 1000) {
 		UCA0TXBUF = hexdigits[num / 1000];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
 	}
 	if (num >= 100) {
 		UCA0TXBUF = hexdigits[num / 100];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/100)*100;
 	}
 	if (num >= 10) {
 		UCA0TXBUF = hexdigits[num / 10];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/10)*10;
 	}
 	UCA0TXBUF = hexdigits[num];
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 void uartcli_println_int(int num)
 {
 	uartcli_print_int(num);
 	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 void uartcli_print_uint(unsigned int num)
 {
 	if (num >= 10000) {
 		UCA0TXBUF = hexdigits[num / 10000];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
 	}
 	if (num >= 1000) {
 		UCA0TXBUF = hexdigits[num / 1000];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
 	}
 	if (num >= 100) {
 		UCA0TXBUF = hexdigits[num / 100];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/100)*100;
 	}
 	if (num >= 10) {
 		UCA0TXBUF = hexdigits[num / 10];
-		LPM0;
+		uartcli_tx_lpm0();
 		num -= (num/10)*10;
 	}
 	UCA0TXBUF = hexdigits[num];
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 void uartcli_println_uint(unsigned int num)
 {
 	uartcli_print_uint(num);
 	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 void uartcli_printhex_byte(char c)
 {
 	UCA0TXBUF = hexdigits[(c >> 4) & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 	UCA0TXBUF = hexdigits[c & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 void uartcli_printhex_word(int i)
 {
 	UCA0TXBUF = hexdigits[(i >> 12) & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 	UCA0TXBUF = hexdigits[(i >> 8) & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 	UCA0TXBUF = hexdigits[(i >> 4) & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 	UCA0TXBUF = hexdigits[i & 0x0F];
-	LPM0;
+	uartcli_tx_lpm0();
 }
 
 inline char uartcli_available()
@@ -284,6 +293,7 @@ __interrupt void USCI0TX_ISR(void)
 	IFG2 &= ~UCB0TXIFG;  // Strawman; should never see this IFG anyway
 	if (IFG2 & UCA0TXIFG) {
 		IFG2 &= ~UCA0TXIFG;
+		uartcli_task &= ~UARTCLI_TASK_TX;
 		__bic_SR_register_on_exit(LPM4_bits);
 	}
 }
