@@ -226,6 +226,24 @@ int uartcli_token_cmd(const char *cmdstrings[])
 	return -1;  // -1 = always the No Match condition
 }
 
+char* uartcli_token_cmdstr(char *buf, int buflen)
+{
+	unsigned int i=0, j=0, l = strlen((const char*)recvbuf);
+
+	if (buflen < 1 || buf == NULL)
+		return NULL;
+
+	i = uartcli_token_cmd_begin;
+	while (i < l && recvbuf[i] != UARTCLI_TOKEN_DELIM && j < buflen-1) {
+		buf[j] = recvbuf[i];
+		i++;
+		j++;
+	}
+	buf[j] = '\0';
+
+	return buf;
+}
+
 char* uartcli_token_arg(unsigned char argnum, char *buf, int buflen)
 {
 	unsigned int i=0, j=0, l = strlen((const char*)recvbuf);
