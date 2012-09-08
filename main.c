@@ -29,6 +29,8 @@ int main()
 	while (1) {
 		if (uartcli_available()) {
 			uartcli_token_begin();
+			uartcli_token_cmdstr(argbuf, 32);
+			uartcli_print_str(argbuf); uartcli_print_str(": ");
 			i = uartcli_token_cmd(cmdlist);
 			uartcli_println_int(i);
 			for (i=1; i<10; i++) {
