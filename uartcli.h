@@ -49,14 +49,18 @@ inline void uartcli_clear();       // Notify library last incoming message proce
 void uartcli_setbuf(char *, int);  // Set incoming data buffer and maximum size.  Run within uartcli_begin()
 
 // Parse/tokenize data into command + arguments
-void uartcli_token_begin();        // Run this right before tokenizing a newly-received command; it sets some internal pointers
-int uartcli_token_cmd(const char**);           /* Parse command string and compare to a list of strings; return index of found command
-				 		* or -1 if not found.
+void uartcli_token_begin();        /* Run this right before tokenizing a newly-received command; it sets some
+				    * internal pointers.
+				    */
+int uartcli_token_cmd(const char**);           /* Parse command string and compare to a list of strings; return
+					        * index of found command or -1 if not found.  Intended to make
+						* it easy to branch code based on command strings using switch().
 						*/
 char* uartcli_token_cmdstr(char*, int);  /* Copy command string into char buf, at most (int) buflen bytes. */
 
-char* uartcli_token_arg(unsigned char, char*, int);  /* Find argument by index (starting at 1) and copy into supplied char buf,
-						      * at most (int) buflen bytes.  Returns NULL if argument not found.
+char* uartcli_token_arg(unsigned char, char*, int);  /* Find argument by index (starting at 1) and copy into
+						      * supplied char buf, at most (int) buflen bytes.  Returns
+						      * NULL if argument not found.
 						      */
 
 #endif
