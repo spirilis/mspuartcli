@@ -58,9 +58,7 @@ void uartcli_print_str(char *str)
 	j = strlen(str);
 	for (; j; j--) {
 		UCA0TXBUF = str[i];
-		uartcli_task |= UARTCLI_TASK_TX;
-		while (uartcli_task & UARTCLI_TASK_TX)
-			LPM0;
+		uartcli_tx_lpm0();
 		i++;
 	}
 }
