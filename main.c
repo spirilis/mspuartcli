@@ -1,3 +1,11 @@
+/* Demo code showcasing the uartcli library
+ * Program initializes a USCI_A capable MSP430 at 16MHz, runs SMCLK at 4MHz (MCLK/4),
+ * then utilizes the uartcli library to listen for incoming commands, parse them against
+ * a simple list of strings (cmdlist[]) deriving an index of which string corresponds to the
+ * first contiguous word in the input buffer (or -1 if none do), then prints up to 9
+ * arguments (whitespace-delimited) afterward.
+ */
+
 #include <msp430.h>
 #include "uartcli.h"
 
