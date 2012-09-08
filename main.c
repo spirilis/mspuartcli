@@ -30,7 +30,8 @@ int main()
 					uartcli_println_str("NULL");
 				}
 			}
-			uartcli_clear();
+			uartcli_clear();  // Tell UART code we're done processing the last cmd, and it can accept new input.
+					  // Otherwise it will quite literally ignore every character coming in.
 		}
 		LPM0;
 	}
