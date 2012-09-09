@@ -5,7 +5,8 @@
 
 volatile char *recvbuf;
 volatile int recvsize;
-volatile unsigned int recvidx, uartcli_token_arg_begin, uartcli_token_cmd_begin;
+volatile unsigned int recvidx;
+unsigned int uartcli_token_arg_begin, uartcli_token_cmd_begin;
 volatile char uartcli_task;
 
 void uartcli_begin(char *inbuf, int insize)
