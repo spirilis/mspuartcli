@@ -82,6 +82,8 @@ const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
 
 void uartcli_print_int(int num)
 {
+	char force_zero = 0;
+
 	if (num < 0) {
 		UCA0TXBUF = '-';
 		uartcli_tx_lpm0();
@@ -91,21 +93,25 @@ void uartcli_print_int(int num)
 		UCA0TXBUF = hexdigits[num / 10000];
 		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
+		force_zero = 1;
 	}
-	if (num >= 1000) {
+	if (num >= 1000 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 1000];
 		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
+		force_zero = 1;
 	}
-	if (num >= 100) {
+	if (num >= 100 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 100];
 		uartcli_tx_lpm0();
 		num -= (num/100)*100;
+		force_zero = 1;
 	}
-	if (num >= 10) {
+	if (num >= 10 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 10];
 		uartcli_tx_lpm0();
 		num -= (num/10)*10;
+		force_zero = 1;
 	}
 	UCA0TXBUF = hexdigits[num];
 	uartcli_tx_lpm0();
@@ -120,25 +126,31 @@ void uartcli_println_int(int num)
 
 void uartcli_print_uint(unsigned int num)
 {
+	char force_zero = 0;
+
 	if (num >= 10000) {
 		UCA0TXBUF = hexdigits[num / 10000];
 		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
+		force_zero = 1;
 	}
-	if (num >= 1000) {
+	if (num >= 1000 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 1000];
 		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
+		force_zero = 1;
 	}
-	if (num >= 100) {
+	if (num >= 100 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 100];
 		uartcli_tx_lpm0();
 		num -= (num/100)*100;
+		force_zero = 1;
 	}
-	if (num >= 10) {
+	if (num >= 10 || force_zero) {
 		UCA0TXBUF = hexdigits[num / 10];
 		uartcli_tx_lpm0();
 		num -= (num/10)*10;
+		force_zero = 1;
 	}
 	UCA0TXBUF = hexdigits[num];
 	uartcli_tx_lpm0();
