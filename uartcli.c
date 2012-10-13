@@ -57,10 +57,9 @@ void uartcli_print_str(char *str)
 	int i=0, j;
 
 	j = strlen(str);
-	for (; j; j--) {
+	for (i=0; i<j; i++) {
 		UCA0TXBUF = str[i];
 		uartcli_tx_lpm0();
-		i++;
 	}
 }
 
@@ -69,16 +68,13 @@ void uartcli_println_str(char *str)
 	int i=0, j;
 
 	j = strlen(str);
-	for (; j; j--) {
+	for (i=0; i<j; i++) {
 		UCA0TXBUF = str[i];
 		uartcli_tx_lpm0();
-		i++;
 	}
 	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
 	uartcli_tx_lpm0();
 }
-
-const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 void uartcli_print_int(int num)
 {
@@ -162,6 +158,8 @@ void uartcli_println_uint(unsigned int num)
 	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
 	uartcli_tx_lpm0();
 }
+
+const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 void uartcli_printhex_byte(char c)
 {
