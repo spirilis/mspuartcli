@@ -9,14 +9,9 @@
 
 
 /* User-configurable parameters */
-// Line/record-delimiter; define with single-quotes, not double-quotes.
-#define UARTCLI_NEWLINE_DELIM '|'
-/* **NOTE to folks new to my library**
- * Why on earth am I using a pipe for a line delimiter?  I'm using Arduino IDE's serial monitor, which
- * does not send a newline char when you hit enter; just the text entered.  Change this to '\n' for real
- * serial terminals.  For play-time I'm setting it to '|'.
- * Also- '\r' (carriage-return) is ignored.
- */
+// Line/record-delimiter for input; define with single-quotes, not double-quotes.
+#define UARTCLI_NEWLINE_DELIM '\n'
+// Note that carriage-returns (\r) are automatically ignored.
 
 // Newline character to use when sending serial output; define with single-quotes, not double-quotes.
 #define UARTCLI_NEWLINE_OUTPUT '\n'
