@@ -19,8 +19,8 @@ void uartcli_begin(char *inbuf, int insize)
 	UCA0BR0 = 26;
 	UCA0BR1 = 0;
 	UCA0MCTL = UCBRS_0 | UCBRF_1 | UCOS16;
-        P1SEL = BIT1|BIT2;  // USCIA
-        P1SEL2 = BIT1|BIT2; //
+        P1SEL |= BIT1|BIT2;  // USCIA
+        P1SEL2 |= BIT1|BIT2; //
 	UCA0CTL1 &= ~UCSWRST;
 	IE2 |= UCA0TXIE | UCA0RXIE;
 
