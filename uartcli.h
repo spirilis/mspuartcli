@@ -10,8 +10,8 @@
 
 /* User-configurable parameters */
 // Line/record-delimiter; define with single-quotes, not double-quotes.
-// Note that carriage returns ('\r') are automatically dropped/ignored and won't be present in the final buffer.
-#define UARTCLI_NEWLINE_DELIM '\n'
+// Note that linefeeds ('\n') are automatically dropped/ignored and won't be present in the final buffer.
+#define UARTCLI_NEWLINE_DELIM '\r'
 
 // Newline characters to use when sending serial output; define with double-quotes, it's expected to be a char array (string)
 #define UARTCLI_NEWLINE_OUTPUT "\r\n"

@@ -334,7 +334,7 @@ __interrupt void USCI0RX_ISR(void)
 		char c = UCA0RXBUF;
 		if ( !(uartcli_task & UARTCLI_TASK_AVAILABLE) ) {  // Don't process data if user hasn't interpreted last buffer
 			if (c != UARTCLI_NEWLINE_DELIM) {
-				if (c != '\r') {  // Ignore carriage-return characters
+				if (c != '\n') {  // Ignore linefeed characters
 					recvbuf[recvidx++] = c;
 					if (recvidx >= recvsize-1) {  // Overflow; notify user & ignore further data
 						recvbuf[recvidx] = '\0';
