@@ -12,11 +12,11 @@ volatile char uartcli_task;
 void uartcli_begin(char *inbuf, int insize)
 {
 	// Init USCI
-	// Assumes SMCLK = MCLK/4 (4MHz)
+	// Assumes SMCLK = MCLK/2 (8MHz)
 	IFG2 &= ~(UCA0TXIFG | UCA0RXIFG);
 	UCA0CTL0 = 0x00;
 	UCA0CTL1 = UCSSEL_2 | UCSWRST;
-	UCA0BR0 = 26;
+	UCA0BR0 = 52;
 	UCA0BR1 = 0;
 	UCA0MCTL = UCBRS_0 | UCBRF_1 | UCOS16;
         P1SEL |= BIT1|BIT2;  // USCIA
@@ -52,14 +52,27 @@ void uartcli_tx_lpm0()
 		LPM0;
 }
 
+void uartcli_submit_newline()
+{
+	char *newline, i=0;
+
+	newline = (char *)UARTCLI_NEWLINE_OUTPUT;
+	while (newline[i] != '\0') {
+		UCA0TXBUF = newline[i];
+		uartcli_tx_lpm0();
+		i++;
+	}
+}
+
 void uartcli_print_str(char *str)
 {
 	int i=0, j;
 
 	j = strlen(str);
-	for (i=0; i<j; i++) {
+	for (; j; j--) {
 		UCA0TXBUF = str[i];
 		uartcli_tx_lpm0();
+		i++;
 	}
 }
 
@@ -68,13 +81,15 @@ void uartcli_println_str(char *str)
 	int i=0, j;
 
 	j = strlen(str);
-	for (i=0; i<j; i++) {
+	for (; j; j--) {
 		UCA0TXBUF = str[i];
 		uartcli_tx_lpm0();
+		i++;
 	}
-	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	uartcli_tx_lpm0();
+	uartcli_submit_newline();
 }
+
+const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 void uartcli_print_int(int num)
 {
@@ -116,8 +131,7 @@ void uartcli_print_int(int num)
 void uartcli_println_int(int num)
 {
 	uartcli_print_int(num);
-	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	uartcli_tx_lpm0();
+	uartcli_submit_newline();
 }
 
 void uartcli_print_uint(unsigned int num)
@@ -155,11 +169,8 @@ void uartcli_print_uint(unsigned int num)
 void uartcli_println_uint(unsigned int num)
 {
 	uartcli_print_uint(num);
-	UCA0TXBUF = UARTCLI_NEWLINE_OUTPUT;
-	uartcli_tx_lpm0();
+	uartcli_submit_newline();
 }
-
-const char hexdigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 void uartcli_printhex_byte(char c)
 {
@@ -311,7 +322,14 @@ __interrupt void USCI0TX_ISR(void)
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void)
 {
-	IFG2 &= ~UCB0RXIFG;  // Strawman; should never see this IFG anyway
+	// Handle nRF24L01+ SPI traffic
+	if (IFG2 & UCB0RXIFG) {
+		IFG2 &= ~UCB0RXIFG;
+	        IE2 &= ~UCB0RXIE;
+		__bic_SR_register_on_exit(LPM4_bits);
+	}
+
+	// Incoming UART serial data
 	if (IFG2 & UCA0RXIFG) {
 		char c = UCA0RXBUF;
 		if ( !(uartcli_task & UARTCLI_TASK_AVAILABLE) ) {  // Don't process data if user hasn't interpreted last buffer
