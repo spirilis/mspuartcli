@@ -54,7 +54,8 @@ void uartcli_tx_lpm0()
 
 void uartcli_submit_newline()
 {
-	char *newline, i=0;
+	char *newline;
+	unsigned char i=0;
 
 	newline = (char *)UARTCLI_NEWLINE_OUTPUT;
 	while (newline[i] != '\0') {
