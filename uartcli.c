@@ -12,17 +12,31 @@ volatile char uartcli_task;
 void uartcli_begin(char *inbuf, int insize)
 {
 	// Init USCI
-	// Assumes SMCLK = MCLK/2 (8MHz)
+	// Assumes SMCLK = MCLK/1 (16MHz)
+
+	// G2xxx series USCI vs. F5xxx/F6xxx USCI
+	#ifdef __MSP430_HAS_USCI__
 	IFG2 &= ~(UCA0TXIFG | UCA0RXIFG);
+	#elif defined(__MSP430_HAS_USCI_A0__)
+	UCA0IFG = 0;
+	#endif
+
 	UCA0CTL0 = 0x00;
 	UCA0CTL1 = UCSSEL_2 | UCSWRST;
-	UCA0BR0 = 52;
+	UCA0BR0 = 8;       // 115200 @ 16MHz UCOS16=1
 	UCA0BR1 = 0;
-	UCA0MCTL = UCBRS_0 | UCBRF_1 | UCOS16;
+	UCA0MCTL = UCBRS_0 | UCBRF_11 | UCOS16;
         P1SEL |= BIT1|BIT2;  // USCIA
-        P1SEL2 |= BIT1|BIT2; //
+	#ifdef P1SEL2_
+        P1SEL2 |= BIT1|BIT2; // some chips have this, some don't
+	#endif
 	UCA0CTL1 &= ~UCSWRST;
+
+	#ifdef __MSP430_HAS_USCI__
 	IE2 |= UCA0TXIE | UCA0RXIE;
+	#elif defined(__MSP430_HAS_USCI_A0__)
+	UCA0IE |= UCTXIE | UCRXIE;
+	#endif
 
 	uartcli_setbuf(inbuf, insize);
 	recvidx = 0;
@@ -42,7 +56,11 @@ void uartcli_setbuf(char *inbuf, int insize)
 void uart_end()
 {
 	UCA0CTL1 |= UCSWRST;
+	#ifdef __MSP430_HAS_USCI__
 	IE2 &= ~(UCA0TXIE | UCA0RXIE);
+	#elif defined(__MSP430_HAS_USCI_A0__)
+	UCA0IE &= ~(UCTXIE | UCRXIE);
+	#endif
 }
 
 void uartcli_tx_lpm0()
@@ -307,6 +325,7 @@ char* uartcli_token_arg(unsigned char argnum, char *buf, int buflen)
 	return buf;
 }
 
+#ifdef __MSP430_HAS_USCI__
 // USCI TX continue with next char
 #pragma vector=USCIAB0TX_VECTOR
 __interrupt void USCI0TX_ISR(void)
@@ -318,20 +337,32 @@ __interrupt void USCI0TX_ISR(void)
 		__bic_SR_register_on_exit(LPM4_bits);
 	}
 }
+#endif
 
 // USCI RX stuff a buffer
+#ifdef __MSP430_HAS_USCI__
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void)
+#elif defined(__MSP430_HAS_USCI_A0__)
+#pragma vector=USCI_A0_VECTOR
+__interrupt void USCI_A0_ISR(void)
+#endif
 {
-	// Handle nRF24L01+ SPI traffic
+	#ifdef __MSP430_HAS_USCI__
+	// Handle USCI_B0 traffic
 	if (IFG2 & UCB0RXIFG) {
 		IFG2 &= ~UCB0RXIFG;
 	        IE2 &= ~UCB0RXIE;
 		__bic_SR_register_on_exit(LPM4_bits);
 	}
+	#endif
 
 	// Incoming UART serial data
+	#ifdef __MSP430_HAS_USCI__
 	if (IFG2 & UCA0RXIFG) {
+	#elif defined(__MSP430_HAS_USCI_A0__)
+	if (UCA0IFG & UCRXIFG) {
+	#endif
 		char c = UCA0RXBUF;
 		if ( !(uartcli_task & UARTCLI_TASK_AVAILABLE) ) {  // Don't process data if user hasn't interpreted last buffer
 			if (c != UARTCLI_NEWLINE_DELIM) {
@@ -361,4 +392,13 @@ __interrupt void USCI0RX_ISR(void)
 			}
 		}
 	}
+
+	#ifdef __MSP430_HAS_USCI_A0__
+	// Handle TX completion for F5xxx/6xxx USCI_A0
+	if (UCA0IFG & UCTXIFG) {
+		UCA0IFG &= ~UCTXIFG;
+		uartcli_task &= ~UARTCLI_TASK_TX;
+		__bic_SR_register_on_exit(LPM4_bits);
+	}
+	#endif
 }
