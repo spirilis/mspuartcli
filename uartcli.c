@@ -23,9 +23,21 @@ void uartcli_begin(char *inbuf, int insize)
 
 	UCA0CTL0 = 0x00;
 	UCA0CTL1 = UCSSEL_2 | UCSWRST;
-	UCA0BR0 = 8;       // 115200 @ 16MHz UCOS16=1
+
+
+
+	// 115200 @ 16MHz UCOS16=1
+	//UCA0BR0 = 8;
+	//UCA0BR1 = 0;
+	//UCA0MCTL = UCBRS_0 | UCBRF_11 | UCOS16;
+
+	// 9600 @ 16MHz UCOS16=1
+	UCA0BR0 = 104;
 	UCA0BR1 = 0;
-	UCA0MCTL = UCBRS_0 | UCBRF_11 | UCOS16;
+	UCA0MCTL = UCBRS_0 | UCBRF_3 | UCOS16;
+
+
+
         P1SEL |= BIT1|BIT2;  // USCIA
 	#ifdef P1SEL2_
         P1SEL2 |= BIT1|BIT2; // some chips have this, some don't
@@ -83,25 +95,27 @@ void uartcli_submit_newline()
 	}
 }
 
-void uartcli_print_str(char *str)
+void uartcli_print_str(void *str)
 {
+	char *strptr = (char *)str;
 	int i=0, j;
 
-	j = strlen(str);
+	j = strlen(strptr);
 	for (; j; j--) {
-		UCA0TXBUF = str[i];
+		UCA0TXBUF = strptr[i];
 		uartcli_tx_lpm0();
 		i++;
 	}
 }
 
-void uartcli_println_str(char *str)
+void uartcli_println_str(void *str)
 {
+	char *strptr = (char *)str;
 	int i=0, j;
 
-	j = strlen(str);
+	j = strlen(strptr);
 	for (; j; j--) {
-		UCA0TXBUF = str[i];
+		UCA0TXBUF = strptr[i];
 		uartcli_tx_lpm0();
 		i++;
 	}
@@ -191,7 +205,7 @@ void uartcli_println_uint(unsigned int num)
 	uartcli_submit_newline();
 }
 
-void uartcli_printhex_byte(char c)
+void uartcli_printhex_byte(unsigned char c)
 {
 	UCA0TXBUF = hexdigits[(c >> 4) & 0x0F];
 	uartcli_tx_lpm0();

@@ -26,13 +26,13 @@ void uartcli_begin(char *, int);   // Specify a char buffer to hold incoming com
 void uartcli_end();
 
 // Print different types of datatypes
-void uartcli_print_str(char *);
-void uartcli_println_str(char *);
+void uartcli_print_str(void *);
+void uartcli_println_str(void *);
 void uartcli_print_int(int);
 void uartcli_println_int(int);
 void uartcli_print_uint(unsigned int);
 void uartcli_println_uint(unsigned int);
-void uartcli_printhex_byte(char);
+void uartcli_printhex_byte(unsigned char);
 void uartcli_printhex_word(int);
 
 // Accept incoming data
