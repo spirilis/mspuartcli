@@ -1,3 +1,4 @@
+/* USCI_A1 on F5529 LP edition for Backchannel UART */
 #include <msp430.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,25 +17,25 @@ void uartcli_begin(char *inbuf, int insize)
 
 	// G2xxx series USCI vs. F5xxx/F6xxx USCI
 	#ifdef __MSP430_HAS_USCI__
-	IFG2 &= ~(UCA0TXIFG | UCA0RXIFG);
-	#elif defined(__MSP430_HAS_USCI_A0__)
-	UCA0IFG = 0;
+	IFG2 &= ~(UCA1TXIFG | UCA1RXIFG);
+	#elif defined(__MSP430_HAS_USCI_A1__)
+	UCA1IFG = 0;
 	#endif
 
-	UCA0CTL0 = 0x00;
-	UCA0CTL1 = UCSSEL_2 | UCSWRST;
+	UCA1CTL0 = 0x00;
+	UCA1CTL1 = UCSSEL_2 | UCSWRST;
 
 
 
 	// 115200 @ 16MHz UCOS16=1
-	//UCA0BR0 = 8;
-	//UCA0BR1 = 0;
-	//UCA0MCTL = UCBRS_0 | UCBRF_11 | UCOS16;
+	//UCA1BR0 = 8;
+	//UCA1BR1 = 0;
+	//UCA1MCTL = UCBRS_0 | UCBRF_11 | UCOS16;
 
 	// 9600 @ 16MHz UCOS16=1
-	UCA0BR0 = 104;
-	UCA0BR1 = 0;
-	UCA0MCTL = UCBRS_0 | UCBRF_3 | UCOS16;
+	UCA1BR0 = 104;
+	UCA1BR1 = 0;
+	UCA1MCTL = UCBRS_0 | UCBRF_3 | UCOS16;
 
 
 
@@ -49,21 +50,24 @@ void uartcli_begin(char *inbuf, int insize)
 		#endif
 	#endif
 
-	#ifdef __MSP430_HAS_USCI_A0__
+	#ifdef __MSP430_HAS_USCI_A1__
 		// F5xxx series
 		#ifdef __MSP430F5172
 	        P1SEL |= BIT1|BIT2;  // USCIA
+		#endif
+		#ifdef __MSP430F5529
+		P4SEL |= BIT4|BIT5;  // USCI_A1
 		#endif
 	#endif
 
 
 
-	UCA0CTL1 &= ~UCSWRST;
+	UCA1CTL1 &= ~UCSWRST;
 
 	#ifdef __MSP430_HAS_USCI__
-	IE2 |= UCA0TXIE | UCA0RXIE;
-	#elif defined(__MSP430_HAS_USCI_A0__)
-	UCA0IE |= UCTXIE | UCRXIE;
+	IE2 |= UCA1TXIE | UCA1RXIE;
+	#elif defined(__MSP430_HAS_USCI_A1__)
+	UCA1IE |= UCTXIE | UCRXIE;
 	#endif
 
 	uartcli_setbuf(inbuf, insize);
@@ -83,11 +87,11 @@ void uartcli_setbuf(char *inbuf, int insize)
 
 void uart_end()
 {
-	UCA0CTL1 |= UCSWRST;
+	UCA1CTL1 |= UCSWRST;
 	#ifdef __MSP430_HAS_USCI__
-	IE2 &= ~(UCA0TXIE | UCA0RXIE);
-	#elif defined(__MSP430_HAS_USCI_A0__)
-	UCA0IE &= ~(UCTXIE | UCRXIE);
+	IE2 &= ~(UCA1TXIE | UCA1RXIE);
+	#elif defined(__MSP430_HAS_USCI_A1__)
+	UCA1IE &= ~(UCTXIE | UCRXIE);
 	#endif
 }
 
@@ -105,7 +109,7 @@ void uartcli_submit_newline()
 
 	newline = (char *)UARTCLI_NEWLINE_OUTPUT;
 	while (newline[i] != '\0') {
-		UCA0TXBUF = newline[i];
+		UCA1TXBUF = newline[i];
 		uartcli_tx_lpm0();
 		i++;
 	}
@@ -118,7 +122,7 @@ void uartcli_print_str(const void *str)
 
 	j = strlen(strptr);
 	for (; j; j--) {
-		UCA0TXBUF = strptr[i];
+		UCA1TXBUF = strptr[i];
 		uartcli_tx_lpm0();
 		i++;
 	}
@@ -131,7 +135,7 @@ void uartcli_println_str(const void *str)
 
 	j = strlen(strptr);
 	for (; j; j--) {
-		UCA0TXBUF = strptr[i];
+		UCA1TXBUF = strptr[i];
 		uartcli_tx_lpm0();
 		i++;
 	}
@@ -145,35 +149,35 @@ void uartcli_print_int(int num)
 	char force_zero = 0;
 
 	if (num < 0) {
-		UCA0TXBUF = '-';
+		UCA1TXBUF = '-';
 		uartcli_tx_lpm0();
 		num *= -1;
 	}
 	if (num >= 10000) {
-		UCA0TXBUF = hexdigits[num / 10000];
+		UCA1TXBUF = hexdigits[num / 10000];
 		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
 		force_zero = 1;
 	}
 	if (num >= 1000 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 1000];
+		UCA1TXBUF = hexdigits[num / 1000];
 		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
 		force_zero = 1;
 	}
 	if (num >= 100 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 100];
+		UCA1TXBUF = hexdigits[num / 100];
 		uartcli_tx_lpm0();
 		num -= (num/100)*100;
 		force_zero = 1;
 	}
 	if (num >= 10 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 10];
+		UCA1TXBUF = hexdigits[num / 10];
 		uartcli_tx_lpm0();
 		num -= (num/10)*10;
 		force_zero = 1;
 	}
-	UCA0TXBUF = hexdigits[num];
+	UCA1TXBUF = hexdigits[num];
 	uartcli_tx_lpm0();
 }
 
@@ -188,30 +192,30 @@ void uartcli_print_uint(unsigned int num)
 	char force_zero = 0;
 
 	if (num >= 10000) {
-		UCA0TXBUF = hexdigits[num / 10000];
+		UCA1TXBUF = hexdigits[num / 10000];
 		uartcli_tx_lpm0();
 		num -= (num/10000)*10000;
 		force_zero = 1;
 	}
 	if (num >= 1000 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 1000];
+		UCA1TXBUF = hexdigits[num / 1000];
 		uartcli_tx_lpm0();
 		num -= (num/1000)*1000;
 		force_zero = 1;
 	}
 	if (num >= 100 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 100];
+		UCA1TXBUF = hexdigits[num / 100];
 		uartcli_tx_lpm0();
 		num -= (num/100)*100;
 		force_zero = 1;
 	}
 	if (num >= 10 || force_zero) {
-		UCA0TXBUF = hexdigits[num / 10];
+		UCA1TXBUF = hexdigits[num / 10];
 		uartcli_tx_lpm0();
 		num -= (num/10)*10;
 		force_zero = 1;
 	}
-	UCA0TXBUF = hexdigits[num];
+	UCA1TXBUF = hexdigits[num];
 	uartcli_tx_lpm0();
 }
 
@@ -223,21 +227,21 @@ void uartcli_println_uint(unsigned int num)
 
 void uartcli_printhex_byte(unsigned char c)
 {
-	UCA0TXBUF = hexdigits[(c >> 4) & 0x0F];
+	UCA1TXBUF = hexdigits[(c >> 4) & 0x0F];
 	uartcli_tx_lpm0();
-	UCA0TXBUF = hexdigits[c & 0x0F];
+	UCA1TXBUF = hexdigits[c & 0x0F];
 	uartcli_tx_lpm0();
 }
 
 void uartcli_printhex_word(int i)
 {
-	UCA0TXBUF = hexdigits[(i >> 12) & 0x0F];
+	UCA1TXBUF = hexdigits[(i >> 12) & 0x0F];
 	uartcli_tx_lpm0();
-	UCA0TXBUF = hexdigits[(i >> 8) & 0x0F];
+	UCA1TXBUF = hexdigits[(i >> 8) & 0x0F];
 	uartcli_tx_lpm0();
-	UCA0TXBUF = hexdigits[(i >> 4) & 0x0F];
+	UCA1TXBUF = hexdigits[(i >> 4) & 0x0F];
 	uartcli_tx_lpm0();
-	UCA0TXBUF = hexdigits[i & 0x0F];
+	UCA1TXBUF = hexdigits[i & 0x0F];
 	uartcli_tx_lpm0();
 }
 
@@ -360,9 +364,9 @@ char* uartcli_token_arg(unsigned char argnum, char *buf, int buflen)
 #pragma vector=USCIAB0TX_VECTOR
 __interrupt void USCI0TX_ISR(void)
 {
-	IFG2 &= ~UCB0TXIFG;  // Strawman; should never see this IFG anyway
-	if (IFG2 & UCA0TXIFG) {
-		IFG2 &= ~UCA0TXIFG;
+	IFG2 &= ~UCB1TXIFG;  // Strawman; should never see this IFG anyway
+	if (IFG2 & UCA1TXIFG) {
+		IFG2 &= ~UCA1TXIFG;
 		uartcli_task &= ~UARTCLI_TASK_TX;
 		__bic_SR_register_on_exit(LPM4_bits);
 	}
@@ -373,27 +377,27 @@ __interrupt void USCI0TX_ISR(void)
 #ifdef __MSP430_HAS_USCI__
 #pragma vector=USCIAB0RX_VECTOR
 __interrupt void USCI0RX_ISR(void)
-#elif defined(__MSP430_HAS_USCI_A0__)
+#elif defined(__MSP430_HAS_USCI_A1__)
 #pragma vector=USCI_A0_VECTOR
 __interrupt void USCI_A0_ISR(void)
 #endif
 {
 	#ifdef __MSP430_HAS_USCI__
 	// Handle USCI_B0 traffic
-	if (IFG2 & UCB0RXIFG) {
-		IFG2 &= ~UCB0RXIFG;
-	        IE2 &= ~UCB0RXIE;
+	if (IFG2 & UCB1RXIFG) {
+		IFG2 &= ~UCB1RXIFG;
+	        IE2 &= ~UCB1RXIE;
 		__bic_SR_register_on_exit(LPM4_bits);
 	}
 	#endif
 
 	// Incoming UART serial data
 	#ifdef __MSP430_HAS_USCI__
-	if (IFG2 & UCA0RXIFG) {
-	#elif defined(__MSP430_HAS_USCI_A0__)
-	if (UCA0IFG & UCRXIFG) {
+	if (IFG2 & UCA1RXIFG) {
+	#elif defined(__MSP430_HAS_USCI_A1__)
+	if (UCA1IFG & UCRXIFG) {
 	#endif
-		char c = UCA0RXBUF;
+		char c = UCA1RXBUF;
 		if ( !(uartcli_task & UARTCLI_TASK_AVAILABLE) ) {  // Don't process data if user hasn't interpreted last buffer
 			if (c != UARTCLI_NEWLINE_DELIM) {
 				if (c != '\n') {  // Ignore linefeed characters
@@ -423,10 +427,10 @@ __interrupt void USCI_A0_ISR(void)
 		}
 	}
 
-	#ifdef __MSP430_HAS_USCI_A0__
+	#ifdef __MSP430_HAS_USCI_A1__
 	// Handle TX completion for F5xxx/6xxx USCI_A0
-	if (UCA0IFG & UCTXIFG) {
-		UCA0IFG &= ~UCTXIFG;
+	if (UCA1IFG & UCTXIFG) {
+		UCA1IFG &= ~UCTXIFG;
 		uartcli_task &= ~UARTCLI_TASK_TX;
 		__bic_SR_register_on_exit(LPM4_bits);
 	}

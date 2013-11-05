@@ -20,7 +20,7 @@ int main()
         WDTCTL = WDTPW | WDTHOLD;
         DCOCTL = CALDCO_16MHZ;
         BCSCTL1 = CALBC1_16MHZ;
-        BCSCTL2 = DIVS_2;  // SMCLK = MCLK/4
+        BCSCTL2 = DIVS_0;  // SMCLK = MCLK/4
         BCSCTL3 = LFXT1S_2;  // ACLK = VLOCLK/1
         BCSCTL3 &= ~(XT2OF|LFXT1OF);
 
