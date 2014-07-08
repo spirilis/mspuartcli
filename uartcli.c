@@ -17,7 +17,7 @@ void uartcli_begin(char *inbuf, int insize)
 	// G2xxx series USCI vs. F5xxx/F6xxx USCI
 	#ifdef __MSP430_HAS_USCI__
 	IFG2 &= ~(UCA0TXIFG | UCA0RXIFG);
-	#elif defined(__MSP430_HAS_USCI_A0__)
+	#elif defined(__MSP430_HAS_USCI_A0__) || defined(__MSP430_HAS_EUSCI_A0__)
 	UCA0IFG = 0;
 	#endif
 
@@ -25,7 +25,7 @@ void uartcli_begin(char *inbuf, int insize)
 	UCA0CTL1 = UCSSEL_2 | UCSWRST;
 
 
-
+	#ifndef __MSP430_HAS_EUSCI_A0__
 	// 115200 @ 16MHz UCOS16=1
 	//UCA0BR0 = 8;
 	//UCA0BR1 = 0;
@@ -35,7 +35,11 @@ void uartcli_begin(char *inbuf, int insize)
 	UCA0BR0 = 104;
 	UCA0BR1 = 0;
 	UCA0MCTL = UCBRS_0 | UCBRF_3 | UCOS16;
-
+	#else
+	// 115200 @ 16MHz UCOS16=1
+	UCA0BRW = 8;
+	UCA0MCTLW = (0xF7 << 8) | UCBRF_10 | UCOS16;
+	#endif
 
 
 	#ifdef __MSP430_HAS_USCI__
@@ -56,13 +60,20 @@ void uartcli_begin(char *inbuf, int insize)
 		#endif
 	#endif
 
+	#ifdef __MSP430_HAS_EUSCI_A0__  // Wolverine
+		#ifdef __MSP430FR5969
+			P2SEL1 |= BIT0|BIT1; // USCI_A0
+			P2SEL0 &= ~(BIT0|BIT1);
+		#endif
+	#endif
+
 
 
 	UCA0CTL1 &= ~UCSWRST;
 
 	#ifdef __MSP430_HAS_USCI__
 	IE2 |= UCA0TXIE | UCA0RXIE;
-	#elif defined(__MSP430_HAS_USCI_A0__)
+	#elif defined(__MSP430_HAS_USCI_A0__) || defined(__MSP430_HAS_EUSCI_A0__)
 	UCA0IE |= UCTXIE | UCRXIE;
 	#endif
 
@@ -357,8 +368,13 @@ char* uartcli_token_arg(unsigned char argnum, char *buf, int buflen)
 
 #ifdef __MSP430_HAS_USCI__
 // USCI TX continue with next char
-#pragma vector=USCIAB0TX_VECTOR
-__interrupt void USCI0TX_ISR(void)
+  #ifdef __GNUC__
+  __attribute__((interrupt(USCIAB0TX_VECTOR)))
+  void USCI0TX_ISR (void)
+  #else
+  #pragma vector = USCIAB0TX_VECTOR
+  __interrupt void USCI0TX_ISR (void)
+  #endif
 {
 	IFG2 &= ~UCB0TXIFG;  // Strawman; should never see this IFG anyway
 	if (IFG2 & UCA0TXIFG) {
@@ -371,11 +387,21 @@ __interrupt void USCI0TX_ISR(void)
 
 // USCI RX stuff a buffer
 #ifdef __MSP430_HAS_USCI__
-#pragma vector=USCIAB0RX_VECTOR
-__interrupt void USCI0RX_ISR(void)
-#elif defined(__MSP430_HAS_USCI_A0__)
-#pragma vector=USCI_A0_VECTOR
-__interrupt void USCI_A0_ISR(void)
+  #ifdef __GNUC__
+  __attribute__((interrupt(USCIAB0RX_VECTOR)))
+  void USCI0RX_ISR (void)
+  #else
+  #pragma vector = USCIAB0RX_VECTOR
+  __interrupt void USCI0RX_ISR (void)
+  #endif
+#elif defined(__MSP430_HAS_USCI_A0__) || defined(__MSP430_HAS_EUSCI_A0__)
+  #ifdef __GNUC__
+  __attribute__((interrupt(USCI_A0_VECTOR)))
+  void USCI_A0_ISR (void)
+  #else
+  #pragma vector = USCI_A0_VECTOR
+  __interrupt void USCI_A0_ISR (void)
+  #endif
 #endif
 {
 	#ifdef __MSP430_HAS_USCI__
@@ -390,7 +416,7 @@ __interrupt void USCI_A0_ISR(void)
 	// Incoming UART serial data
 	#ifdef __MSP430_HAS_USCI__
 	if (IFG2 & UCA0RXIFG) {
-	#elif defined(__MSP430_HAS_USCI_A0__)
+	#elif defined(__MSP430_HAS_USCI_A0__) || defined(__MSP430_HAS_EUSCI_A0__)
 	if (UCA0IFG & UCRXIFG) {
 	#endif
 		char c = UCA0RXBUF;
@@ -423,7 +449,7 @@ __interrupt void USCI_A0_ISR(void)
 		}
 	}
 
-	#ifdef __MSP430_HAS_USCI_A0__
+	#if defined(__MSP430_HAS_USCI_A0__) || defined(__MSP430_HAS_EUSCI_A0__)
 	// Handle TX completion for F5xxx/6xxx USCI_A0
 	if (UCA0IFG & UCTXIFG) {
 		UCA0IFG &= ~UCTXIFG;
